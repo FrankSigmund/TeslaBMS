@@ -194,7 +194,7 @@ void findBoards()
     uint8_t buff[8];
     payload[1] = 0; //read registers starting at 0
     payload[2] = 1; //read one byte
-    for (int x = 1; x < 64; x++) 
+    for (int x = 1; x < 63; x++) 
     {
         boards[x] = BS_MISSING;
         payload[0] = x << 1;
@@ -203,12 +203,39 @@ void findBoards()
         if (getReply(buff) > 4)
         {
             if (buff[0] == (x << 1) && buff[1] == 0 && buff[2] == 1 && buff[4] > 0) {
-                boards[x] = BS_FOUND;              
+                boards[x] = BS_FOUND;   
+                actboards++;
                 SERIALCONSOLE.print("Found module with address: ");
                 SERIALCONSOLE.println(x, HEX);
             }
         }
     }
+}
+
+void renumber()
+{
+  uint8_t payload[3];
+  uint8_t buff[8];
+  while (actboards != 0)
+  {
+    for (int x = 1; x < 64; x++)
+    {
+      if (boards[x] != BS_MISSING)
+      {
+        payload[0] = x << 1;
+        payload[1] = 0x3c;//reset
+        payload[2] = 0xa5;//data to cause a reset
+        sendData(payload, 3, true);
+        delay(2);
+      }
+      
+    }
+    findBoards();
+    Serial.println();
+    Serial.print(actboards);
+  }
+  delay(10);
+  setupBoards();
 }
 
 bool getModuleVoltage(uint8_t address)
@@ -263,6 +290,23 @@ void setup()
 
 void loop() 
 {
+    
+    if (SERIALCONSOLE.available()) 
+    {     // force renumber and read out
+      char y = SERIALCONSOLE.read();
+      switch (y)
+      {
+      case 49: //asci 1
+        renumber();
+      break;
+
+      case 50: //asci 2
+        SERIALCONSOLE.println();
+        findBoards();
+      break;
+      }
+    }
+    
     delay(500);
     getModuleVoltage(1);
     SERIALCONSOLE.println(moduleVolt[0]);
