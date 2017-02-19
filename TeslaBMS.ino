@@ -38,6 +38,8 @@ uint16_t temperatures[64][2];   // Storage for temperature readings
 uint8_t serBuff[128];
 uint8_t boards[64];
 
+float balVolt = 3.01; // CHANGE - arbitrairy balance value set to balance on my pack
+
 uint8_t actBoards = 0;     // Number of active boards/slaves
 
 uint8_t decodeuart = 0;    // Transfer uart data to serial output
@@ -243,6 +245,59 @@ void renumber()
   setupBoards();
 }
 
+oid cellbalance()
+{
+  uint8_t payload[4];
+  uint8_t buff[30];
+  uint8_t balance = 0;//bit 0 -5 are to activate cell balancing 1-6
+  
+  for (int address = 1; address < 64; address++)
+    {
+      balance = 0;
+      for (int i = 0; i < 6; i++)
+      {
+        if (balVolt < cellVolt[address][i])
+        {
+          balance = balance | (1<<i);
+        }
+      }
+
+      if (balance != 0) //only send balance command when needed
+      {
+        payload[0] = address << 1;
+        payload[1] = REG_BAL_TIME;
+        payload[2] = 0x05; //5 second balance limit, if not triggered to balance it will stop after 5 seconds
+        sendData(payload, 3, true);
+        delay(2);
+        getReply(buff);
+
+        payload[0] = address << 1;
+        payload[1] = REG_BAL_CTRL;
+        payload[2] = balance; //write balance state to register
+        sendData(payload, 3, true);
+        delay(2);
+        getReply(buff);
+
+        if (decodeuart == 1) //read registers back out to check if everthing is good
+        {
+          delay(50);
+          payload[0] = address << 1;
+          payload[1] = REG_BAL_TIME;
+          payload[2] = 1; //
+          sendData(payload, 3, false);
+          delay(2);
+          getReply(buff);
+         
+          payload[0] = address << 1;
+          payload[1] = REG_BAL_CTRL;
+          payload[2] = 1; //
+          sendData(payload, 3, false);
+          delay(2);
+          getReply(buff);
+        }
+      }
+    }    
+}
 
 bool getModuleVoltage(uint8_t address)
 {
@@ -309,6 +364,11 @@ void loop()
             SERIALCONSOLE.println();
             findBoards();
             break;
+        case '3': //activate cell balance for 5 seconds 
+            Serial.println();
+            Serial.println("Balancing");
+            cellbalance();
+        break;
         }
     }    
 
