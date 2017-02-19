@@ -248,56 +248,16 @@ void setupBoards()
 /*
  * Iterate through all 63 possible board addresses (1-63) to see if they respond
  */
-void findBoards()
-{
-    uint8_t payload[3];
-    uint8_t buff[8];
-
-    actBoards = 0;
-
-    payload[1] = 0; //read registers starting at 0
-    payload[2] = 1; //read one byte
-    for (int x = 1; x <= MAX_MODULE_ADDR; x++) 
-    {
-        boards[x] = BS_MISSING;
-        payload[0] = x << 1;
-        sendData(payload, 3, false);
-        delay(2);
-        if (getReply(buff) > 4)
-        {
-            if (buff[0] == (x << 1) && buff[1] == 0 && buff[2] == 1 && buff[4] > 0) {
-                boards[x] = BS_FOUND;
-                actBoards++;              
-                SERIALCONSOLE.print("Found module with address: ");
-                SERIALCONSOLE.println(x, HEX);
-            }
-        }
-    }
-}
-
 void renumber()
 {
   uint8_t payload[3];
-  uint8_t buff[8];
-  while (actBoards != 0)
-  {
-    for (int x = 1; x <= MAX_MODULE_ADDR; x++)
-    {
-      if (boards[x] != BS_MISSING)
-      {
-        payload[0] = x << 1;
-        payload[1] = 0x3c;//reset
-        payload[2] = 0xa5;//data to cause a reset
-        sendData(payload, 3, true);
-        delay(2);
-      }
-      
-    }
-    findBoards();
-    SERIALCONSOLE.println();
-    SERIALCONSOLE.print(actBoards);
-  }
-  delay(10);
+  payload[0] = 0x7F; //broadcast
+  payload[1] = 0x3c;//reset
+  payload[2] = 0xa5;//data to cause a reset
+  sendData(payload, 3, true);
+  delay(30);
+  findBoards();
+  delay(30);
   setupBoards();
 }
 
