@@ -99,13 +99,14 @@ void sendData(uint8_t *data, uint8_t dataLen, bool isWrite)
 int getReply(uint8_t *data)
 {  
     int numBytes = 0; 
-    SerialUSB.print("Reply: ");
-    while (Serial1.available())
+    Serial.print("Reply: ");
+    while (Serial3.available())
     {
-        SerialUSB.print(Serial1.read(), HEX);
+      data[numBytes]=Serial3.read();
+        Serial.print(data[numBytes], HEX);
         numBytes++;
     }
-    SerialUSB.println();
+    Serial.println();
     return numBytes;
 }
 
