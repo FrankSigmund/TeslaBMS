@@ -376,6 +376,52 @@ void readsetpoint(uint8_t address)
   Tset = 35+ (5 * (buff[9] >> 4));
 }
 
+/*
+Puts all boards on the bus into a Sleep state, very good to use when the vehicle is a rest state. 
+Pulling the boards out of sleep only to check voltage decay and temperature when the contactors are open.
+*/
+
+void sleepboards()
+{
+  uint8_t payload[3];
+  uint8_t buff[8];
+  payload[0] = 0x7F; //broadcast
+  payload[1] = REG_IO_CTRL;//IO ctrl start
+  payload[2] = 0x04;//write sleep bit
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+}
+
+/*
+Wakes all the boards up and clears thier SLEEP state bit in the Alert Status Registery
+*/
+
+void wakeboards()
+{
+  uint8_t payload[3];
+  uint8_t buff[8];
+  payload[0] = 0x7F; //broadcast
+  payload[1] = REG_IO_CTRL;//IO ctrl start
+  payload[2] = 0x00;//write sleep bit
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+  
+  payload[0] = 0x7F; //broadcast
+  payload[1] = REG_ALERT_STATUS;//Fault Status
+  payload[2] = 0x04;//data to cause a reset
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+  payload[0] = 0x7F; //broadcast
+  payload[2] = 0x00;//data to clear
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+}
+
+
 bool getModuleVoltage(uint8_t address)
 {
     uint8_t payload[4];
@@ -466,6 +512,19 @@ void loop()
        SERIALCONSOLE.println(UVolt);
        SERIALCONSOLE.println(Tset);
       break; 
+                
+      case '0': //Send all boards into Sleep state
+       Serial.println();
+       Serial.println("Sleep Mode");
+       sleepboards();
+      break;
+
+      case '9'://Pull all boards out of Sleep state
+       Serial.println();
+       Serial.println("Wake Boards");
+       wakeboards();
+      break;          
+                
         }
     }    
 
