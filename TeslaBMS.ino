@@ -43,6 +43,12 @@ uint8_t boards[MAX_MODULE_ADDR + 1];
 
 float balVolt = 3.01; // CHANGE - arbitrairy balance value set to balance on my pack
 
+//Settings read from BMS slaves
+float OVolt = 0.0;         //Overvoltage setpoint
+float UVolt = 0.0;         //Undervoltage setpoint
+float Tset = 0.0;          //Temperature setpoint
+
+
 uint8_t actBoards = 0;     // Number of active boards/slaves
 
 uint8_t decodeuart = 1;    // Transfer uart data to serial output
@@ -302,6 +308,73 @@ void renumber()
   setupBoards();    //then assign them all consecutive addresses in order
 }
 
+/*
+After a RESET boards have their faults written due to the hard restart or first time power up, this clears thier faults
+*/
+void clearfaults()
+{
+  uint8_t payload[3];
+  uint8_t buff[8];
+  payload[0] = 0x7F; //broadcast
+  payload[1] = REG_ALERT_STATUS;//Alert Status
+  payload[2] = 0x80;//data to cause a reset
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+  payload[0] = 0x7F; //broadcast
+  payload[2] = 0x00;//data to clear
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+  
+  payload[0] = 0x7F; //broadcast
+  payload[1] = REG_FAULT_STATUS;//Fault Status
+  payload[2] = 0x08;//data to cause a reset
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+  payload[0] = 0x7F; //broadcast
+  payload[2] = 0x00;//data to clear
+  sendData(payload, 3, true);
+  delay(2);
+  getReply(buff);
+}
+
+/*
+Reading the status of the indvidual boards to identify any flags, will be more useful when implementing a sleep cycle
+*/
+void readstatus(uint8_t address)
+{
+  uint8_t payload[3];
+  uint8_t buff[8];
+  payload[0] = address << 1; //adresss
+  payload[1] = REG_ALERT_STATUS;//Alert Status start
+  payload[2] = 0x02;//two registers
+  sendData(payload, 3, false);
+  delay(2);
+  getReply(buff);
+}
+
+/*
+Reading the setpoints, after a reset the default tesla setpoints are loaded
+Default response : 0x10, 0x80, 0x31, 0x81, 0x08, 0x81, 0x66, 0xff
+*/
+
+void readsetpoint(uint8_t address)
+{
+  uint8_t payload[3];
+  uint8_t buff[12];
+  payload[0] = address << 1; //adresss
+  payload[1] = 0x40;//Alert Status start
+  payload[2] = 0x08;//two registers
+  sendData(payload, 3, false);
+  delay(2);
+  getReply(buff);
+
+  OVolt = 2.0+ (0.05* buff[5]);
+  UVolt = 0.7 + (0.1* buff[7]);
+  Tset = 35+ (5 * (buff[9] >> 4));
+}
 
 bool getModuleVoltage(uint8_t address)
 {
@@ -372,6 +445,27 @@ void loop()
             SERIALCONSOLE.println("Balancing");
             cellBalance();
             break;
+      
+      case '4': //clear all faults on all boards, required after Reset or FPO (first power on)
+       SERIALCONSOLE.println();
+       SERIALCONSOLE.println("Clearing Faults");
+       clearfaults();
+      break;
+
+      case '5': //read out the status of first board
+       SERIALCONSOLE.println();
+       SERIALCONSOLE.println("Reading status");
+       readstatus(1);
+      break;
+
+      case '6': //Read out the limit setpoints of first board
+       SERIALCONSOLE.println();
+       SERIALCONSOLE.println("Reading Setpoints");
+       readsetpoint(1);
+       SERIALCONSOLE.println(OVolt);
+       SERIALCONSOLE.println(UVolt);
+       SERIALCONSOLE.println(Tset);
+      break; 
         }
     }    
 
