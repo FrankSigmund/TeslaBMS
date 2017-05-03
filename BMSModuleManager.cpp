@@ -312,9 +312,17 @@ void BMSModuleManager::setBatteryID(int id)
 float BMSModuleManager::getAvgTemperature()
 {
     float avg = 0.0f;    
+    int y = 0; //counter for modules below -70 (no sensors connected) 
     for (int x = 1; x <= MAX_MODULE_ADDR; x++)
     {
-        if (modules[x].isExisting()) avg += modules[x].getAvgTemp();
+      if (modules[x].getAvgTemp() > -70) 
+          {
+            avg += modules[x].getAvgTemp();
+          }
+      else
+      {
+          y++;
+      }
     }
     avg = avg / (float)numFoundModules;
     
