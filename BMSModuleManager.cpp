@@ -367,29 +367,29 @@ void BMSModuleManager::printPackSummary()
                 Logger::console("  MODULE IS FAULTED:");
                 if (faults & 1)
                 {
-                    SerialUSB.print("    Overvoltage Cell Numbers (1-6): ");
+                    SERIALCONSOLE.print("    Overvoltage Cell Numbers (1-6): ");
                     for (int i = 0; i < 6; i++)
                     {
                         if (COV & (1 << i)) 
                         {
-                            SerialUSB.print(i+1);
-                            SerialUSB.print(" ");
+                            SERIALCONSOLE.print(i+1);
+                            SERIALCONSOLE.print(" ");
                         }
                     }
-                    SerialUSB.println();
+                   SERIALCONSOLE.println();
                 }
                 if (faults & 2)
                 {
-                    SerialUSB.print("    Undervoltage Cell Numbers (1-6): ");
+                    SERIALCONSOLE.print("    Undervoltage Cell Numbers (1-6): ");
                     for (int i = 0; i < 6; i++)
                     {
                         if (CUV & (1 << i)) 
                         {
-                            SerialUSB.print(i+1);
-                            SerialUSB.print(" ");
+                           SERIALCONSOLE.print(i+1);
+                            SERIALCONSOLE.print(" ");
                         }
                     }
-                    SerialUSB.println();
+                    SERIALCONSOLE.println();
                 }
                 if (faults & 4)
                 {
@@ -444,7 +444,7 @@ void BMSModuleManager::printPackSummary()
                     Logger::console("    Address not registered");
                 }                
             }
-            if (faults > 0 || alerts > 0) SerialUSB.println();
+            if (faults > 0 || alerts > 0) SERIALCONSOLE.println();
         }
     }
 }
@@ -475,26 +475,26 @@ void BMSModuleManager::printPackDetails()
             COV = modules[y].getCOVCells();
             CUV = modules[y].getCUVCells();
             
-            SerialUSB.print("Module #");
-            SerialUSB.print(y);
-            if (y < 10) SerialUSB.print(" ");
-            SerialUSB.print("  ");
-            SerialUSB.print(modules[y].getModuleVoltage());
-            SerialUSB.print("V");
+            SERIALCONSOLE.print("Module #");
+            SERIALCONSOLE.print(y);
+            if (y < 10) SERIALCONSOLE.print(" ");
+            SERIALCONSOLE.print("  ");
+            SERIALCONSOLE.print(modules[y].getModuleVoltage());
+            SERIALCONSOLE.print("V");
             for (int i = 0; i < 6; i++)
             {
-                if (cellNum < 10) SerialUSB.print(" ");
-                SerialUSB.print("  Cell");
-                SerialUSB.print(cellNum++);                
-                SerialUSB.print(": ");
-                SerialUSB.print(modules[y].getCellVoltage(i));
-                SerialUSB.print("V");
+                if (cellNum < 10) SERIALCONSOLE.print(" ");
+                SERIALCONSOLE.print("  Cell");
+                SERIALCONSOLE.print(cellNum++);                
+                SERIALCONSOLE.print(": ");
+                SERIALCONSOLE.print(modules[y].getCellVoltage(i));
+                SERIALCONSOLE.print("V");
             }   
-            SerialUSB.print("  Neg Term Temp: ");
-            SerialUSB.print(modules[y].getTemperature(0));
-            SerialUSB.print("C  Pos Term Temp: ");
-            SerialUSB.print(modules[y].getTemperature(1)); 
-            SerialUSB.println("C");
+            SERIALCONSOLE.print("  Neg Term Temp: ");
+            SERIALCONSOLE.print(modules[y].getTemperature(0));
+            SERIALCONSOLE.print("C  Pos Term Temp: ");
+            SERIALCONSOLE.print(modules[y].getTemperature(1)); 
+            SERIALCONSOLE.println("C");
             
         }
     }
